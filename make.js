@@ -1,30 +1,40 @@
 var fs = require('fs');
 var https = require('https');
 
+/* Create a request using basic authorization (regular github username, password)
+ * This will be used only for getting the authorization token.
+ */
 var basicRequest = function(user, password)
 {
     return function(options, callback)
     {
 	options["headers"] = options["headers"] || {};
 	options["headers"]["Authorization"] = "Basic " + (new Buffer(user + ':' + password).toString('base64'));
+	
 	var req = https.request(options, callback);	
 	return req;
     }
 }
 
+/*
+ * Create a request using token authorization.
+ */
 var tokenRequest = function(token)
 {
     return function(options, callback)
     {
 	options["headers"] = options["headers"] || {};	
 	options["headers"]["Authorization"] = "token " + token;	
-	//console.log(options["headers"]["Authorization"]);
+	
 	var req = https.request(options, callback);
 	return req;
     };
 }
 
 
+/*
+ * Read config (plain text ... argh!)
+ */
 var readConfig = function(done){
     fs.exists('config.json', function(val) {
 	console.log('* config exists:', val);
@@ -60,7 +70,9 @@ var readConfig = function(done){
 };
 
 
-
+/*
+ * Callback for requests. Parses as JSON
+ */
 var reqDone = function(hasData) { 
     return function(res)
     {
@@ -76,6 +88,9 @@ var reqDone = function(hasData) {
     };
 };
 
+/*
+ * Callback for requests. Plain text.
+ */
 var reqStr = function(hasData) { 
     return function(res)
     {
@@ -181,14 +196,18 @@ readConfig(function(user, password){
 	    console.log(obj);
 	    return obj;
 	}, get_token, tokenRequest, /* Download repos */ function(reqFactory) {
+	    console.log('* Downloading repos');
+
 	    var req = reqFactory({ 
 		hostname: 'api.github.com',
 		path: '/user/repos',
 		method: 'GET',
-	    }, reqStr( compose( writeToFile('out/' + user + '/repos.json', ['out/' + user]), parse, map(function(i){ return i.name; }),  
+	    }, reqStr( compose( writeToFile('out/' + user + '/repos.json', ['out', 'out/' + user]), parse, map(function(i){ return i.name; }),  
 				/* Download languages */
 				function(repos) {
-				    repos.map(function(repo) {
+
+				    repos.map(compose(function(repo) {
+					
 					var req = reqFactory({
 					    hostname: 'api.github.com',
 					    path: '/repos/' + user + '/' + repo + '/languages', 
@@ -199,7 +218,27 @@ readConfig(function(user, password){
 					    )
 					));
 					req.end();
-				    });
+
+					return repo;
+				    }, function(repo) {
+					
+					var req = reqFactory({
+					    hostname: 'api.github.com',
+					    path: '/repos/' + user + '/' + repo + '/branches', 
+					    method: 'GET',					
+					}, reqStr(
+					    compose(
+						writeToFile('out/' + user + '/' + repo + '/branches.json', ['out/' + user + '/' + repo]),
+						parse,
+						function(branches) {
+						    
+						}
+					    )
+					));
+					req.end();
+
+					return repo;
+				    }));				    
 				    
 				    return repos;
 				}

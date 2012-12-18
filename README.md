@@ -15,7 +15,7 @@ node make.js
 ```
 out\
  |-user\
-    |- repo.json
+    |- repos.json
     |- repo-1\
     |   |- languages.json
     |   |- branches.json

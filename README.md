@@ -2,6 +2,8 @@
 
 Extract data from the github's API.
 
+**Attention!** User/password are saved as plain text :'(
+
 ## Run
 
 ```

@@ -2,6 +2,12 @@
 
 Extract data from the github's API.
 
+## Run
+
+```
+node make.js
+```
+
 ## Output:
 
 ```

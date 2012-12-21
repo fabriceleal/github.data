@@ -231,7 +231,19 @@ readConfig(function(user, password){
 						writeToFile('out/' + user + '/' + repo + '/branches.json', ['out/' + user + '/' + repo]),
 						parse,
 						function(branches) {
-						    
+						    branches.map(function(branch) {
+							var req = reqFactory({
+							    hostname : 'api.github.com',
+							    path : '/repos/' + user + '/' + repo + '/branches/' + branch.name,
+							    method : 'GET'
+							}, reqStr(compose(
+							    writeToFile('out/' + user + '/' + repo + '/branches/' + branch.name + '.json' , 
+									['out/' + user + '/' + repo + '/branches'])
+							)));
+							req.end();
+							return branch;
+						    }));
+						    return branches;
 						}
 					    )
 					));
